@@ -1,0 +1,63 @@
+Adaptive AI-Assisted Alert Prioritization Metrics Report
+==============================================================
+
+1. Random Forest classification report
+                   precision    recall  f1-score   support
+
+           Benign       1.00      1.00      1.00    458676
+              Bot       1.00      1.00      1.00       393
+       BruteForce       1.00      1.00      1.00      2816
+             DDoS       1.00      1.00      1.00     45149
+              DoS       1.00      1.00      1.00     50532
+       Heartbleed       1.00      1.00      1.00         2
+     Infiltration       1.00      1.00      1.00         7
+         PortScan       1.00      1.00      1.00     57293
+            Recon       0.20      0.38      0.26         8
+SuspiciousProcess       0.53      0.73      0.62        33
+        WebAttack       0.97      0.99      0.98     22900
+
+         accuracy                           1.00    637809
+        macro avg       0.88      0.92      0.90    637809
+     weighted avg       1.00      1.00      1.00    637809
+
+
+2. Confusion matrix
+Labels: ['Benign', 'Bot', 'BruteForce', 'DDoS', 'DoS', 'Heartbleed', 'Infiltration', 'PortScan', 'Recon', 'SuspiciousProcess', 'WebAttack']
+[[457930      0      0      0      0      0      0      0      8     17
+     721]
+ [     0    393      0      0      0      0      0      0      0      0
+       0]
+ [     0      0   2816      0      0      0      0      0      0      0
+       0]
+ [     0      0      0  45149      0      0      0      0      0      0
+       0]
+ [     0      0      0      0  50532      0      0      0      0      0
+       0]
+ [     0      0      0      0      0      2      0      0      0      0
+       0]
+ [     0      0      0      0      0      0      7      0      0      0
+       0]
+ [     0      0      0      0      0      0      0  57293      0      0
+       0]
+ [     0      0      0      0      0      0      0      0      3      4
+       1]
+ [     4      0      0      0      0      0      0      0      4     24
+       1]
+ [   131      0      0      0      0      0      0      0      0      0
+   22769]]
+
+3. SOC-oriented metrics
+total_alerts: 3189042
+high_priority_count: 77465
+anomaly_review_count: 1398336
+low_priority_count: 1713241
+alert_volume_reduction: 0.5372
+
+4. High priority precision
+high_priority_precision: 0.2223
+
+5. False positive count
+false_positive_count: 60248
+
+6. Analyst override simulation and feedback tuning
+High priority false positive rate is above 0.30; suggest increasing the high threshold from 0.80 to 0.85.
