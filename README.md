@@ -4,7 +4,7 @@
 
 Framework **không** triển khai real-time re-ingestion vào Wazuh, **không** tạo custom Wazuh rules, và **không** tích hợp Wazuh Dashboard. Dữ liệu đầu vào mong đợi là một file JSON lines (JSON) được export từ Wazuh, thường lấy từ `/var/ossec/logs/alerts/alerts.json`.
 
-## Phạm vi dự án (Project Scope)
+## Phạm vi
 
 Pipeline thực hiện các bước sau:
 - Nạp dữ liệu Wazuh alerts export
@@ -17,7 +17,7 @@ Pipeline thực hiện các bước sau:
 - Định tuyến alert (routing) vào các queue xử lý cho analyst
 - Sinh các output phục vụ báo cáo nghiên cứu
 
-## Vị trí đặt dữ liệu (Dataset Placement)
+## Vị trí đặt dữ liệu 
 
 Đặt file Wazuh alerts export dạng JSONL tại đường dẫn sau:
 ```text
@@ -29,7 +29,7 @@ Nếu không tìm thấy file, `python src/main.py` sẽ dừng lại và hiển
 Dataset not found. Please provide your exported Wazuh alerts JSONL file at data/raw/alerts_export.json.
 ```
 
-## Cài đặt (Installation)
+## Cài đặt
 
 ```bash
 pip install -r requirements.txt
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
-## Output mong đợi (Expected Outputs)
+## Output mong đợi 
 
 ```text
 data/processed/alerts_processed.csv
@@ -57,7 +57,7 @@ reports/figures/route_distribution.png
 reports/figures/confusion_matrix.png
 ```
 
-## PriorityScore (Composite Risk Scoring)
+## PriorityScore 
 
 Prototype tính điểm ưu tiên cho từng alert theo công thức:
 
@@ -77,7 +77,7 @@ Trong đó:
 - `RecurrenceSignal`: `min(rule_firedtimes / 10, 1)` — phản ánh tần suất lặp lại của alert.
 - `AssetCriticality`: bằng `1.0` nếu tên agent chứa các từ khóa `server`, `wazuh`, `dc`, `database`, `db`, hoặc `web`; ngược lại bằng `0.5`.
 
-## Định tuyến cảnh báo (Dynamic Alert Routing)
+## Định tuyến cảnh báo 
 
 Alert được định tuyến theo logic:
 
@@ -100,7 +100,7 @@ Mức độ nghiêm trọng (severity) được ánh xạ tương ứng:
 - `anomaly_review` → `medium`
 - `low_priority` → `low`
 
-## Đánh giá (Evaluation)
+## Đánh giá
 
 Báo cáo (metrics_report.txt) bao gồm:
 - Classification report của Random Forest
@@ -111,14 +111,14 @@ Báo cáo (metrics_report.txt) bao gồm:
 - False Positive Count
 - Mô phỏng analyst feedback và đề xuất hiệu chỉnh ngưỡng (threshold tuning suggestions)
 
-## Hạn chế (Limitations)
+## Hạn chế
 
 - Nhãn được gán bằng rule-based keyword mapping, chưa phải ground truth đã được analyst xác thực.
 - Prototype chỉ phục vụ mục đích đánh giá nghiên cứu offline, chưa dùng cho môi trường SOC production.
 - Isolation Forest sử dụng các đặc trưng đã được engineering, không nên xem là bằng chứng xác định (definitive evidence) về việc bị xâm nhập.
 - Các ngưỡng (thresholds) hiện tại là giá trị mặc định cố định, cần được hiệu chỉnh thêm dựa trên feedback thật từ analyst.
 
-## Hướng phát triển (Future Work)
+## Hướng phát triển
 
 - Bổ sung nhãn được analyst xác thực thủ công (manually validated labels).
 - Mở rộng feature engineering với ánh xạ kỹ thuật theo MITRE ATT&CK.
