@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.matplotlib_cache/
+
+data/processed/
+data/output/
+models/
+reports/
