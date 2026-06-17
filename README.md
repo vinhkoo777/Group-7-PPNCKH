@@ -1,40 +1,47 @@
-# Adaptive AI-Assisted Alert Prioritization for Wazuh Alerts
+# Beyond Classification: An AI-Assisted Alert Prioritization Framework for Wazuh SIEM Using Composite Risk Scoring
 
-This project is a research prototype for an offline/batch framework that prioritizes exported Wazuh SIEM alerts using machine learning and rule-based security context.
+Đây là một prototype nghiên cứu cho một framework offline/batch nhằm chấm điểm ưu tiên (prioritize) các cảnh báo Wazuh SIEM đã được export, dựa trên kết hợp giữa machine learning và ngữ cảnh bảo mật theo rule-based.
 
-It does not implement real-time Wazuh re-ingestion, custom Wazuh rules, or Wazuh dashboard integration. The intended input is a JSON lines export from Wazuh, commonly from `/var/ossec/logs/alerts/alerts.json`.
+Framework **không** triển khai real-time re-ingestion vào Wazuh, **không** tạo custom Wazuh rules, và **không** tích hợp Wazuh Dashboard. Dữ liệu đầu vào mong đợi là một file JSON lines (JSON) được export từ Wazuh, thường lấy từ `/var/ossec/logs/alerts/alerts.json`.
 
-## Project Scope
+## Phạm vi dự án (Project Scope)
 
-The pipeline loads exported Wazuh alerts, flattens nested JSON fields, creates features, maps alert text into research labels, trains a Random Forest classifier, trains an Isolation Forest anomaly model, calculates `PriorityScore`, routes alerts into analyst queues, and generates outputs for a research report.
+Pipeline thực hiện các bước sau:
+- Nạp dữ liệu Wazuh alerts export
+- Flatten các trường JSON lồng nhau (nested JSON fields)
+- Tạo đặc trưng (feature engineering)
+- Gán nhãn nghiên cứu (research labels) dựa trên ánh xạ từ nội dung alert
+- Huấn luyện mô hình phân loại Random Forest
+- Huấn luyện mô hình phát hiện bất thường Isolation Forest
+- Tính toán `PriorityScore`
+- Định tuyến alert (routing) vào các queue xử lý cho analyst
+- Sinh các output phục vụ báo cáo nghiên cứu
 
-## Dataset Placement
+## Vị trí đặt dữ liệu (Dataset Placement)
 
-Place the exported Wazuh JSONL file here:
-
+Đặt file Wazuh alerts export dạng JSONL tại đường dẫn sau:
 ```text
 data/raw/alerts_export.json
 ```
 
-If the file is missing, `python src/main.py` stops with:
-
+Nếu không tìm thấy file, `python src/main.py` sẽ dừng lại và hiển thị:
 ```text
 Dataset not found. Please provide your exported Wazuh alerts JSONL file at data/raw/alerts_export.json.
 ```
 
-## Installation
+## Cài đặt (Installation)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Run the Pipeline
+## Chạy Pipeline (Run the Pipeline)
 
 ```bash
 python src/main.py
 ```
 
-## Expected Outputs
+## Output mong đợi (Expected Outputs)
 
 ```text
 data/processed/alerts_processed.csv
@@ -50,9 +57,9 @@ reports/figures/route_distribution.png
 reports/figures/confusion_matrix.png
 ```
 
-## PriorityScore
+## PriorityScore (Composite Risk Scoring)
 
-The prototype calculates:
+Prototype tính điểm ưu tiên cho từng alert theo công thức:
 
 ```text
 PriorityScore =
@@ -63,61 +70,58 @@ PriorityScore =
 + 0.10 * AssetCriticality
 ```
 
-Where:
+Trong đó:
+- `RF_Probability`: xác suất lớn nhất theo nhãn dự đoán của mô hình Random Forest (supervised confidence).
+- `NormNoveltyIF`: điểm Isolation Forest âm được chuẩn hóa min-max, giá trị càng cao thể hiện mức độ bất thường càng lớn.
+- `NormRuleLevel`: `min(rule_level / 15, 1)`.
+- `RecurrenceSignal`: `min(rule_firedtimes / 10, 1)` — phản ánh tần suất lặp lại của alert.
+- `AssetCriticality`: bằng `1.0` nếu tên agent chứa các từ khóa `server`, `wazuh`, `dc`, `database`, `db`, hoặc `web`; ngược lại bằng `0.5`.
 
-- `RF_Probability` is the maximum Random Forest class probability.
-- `NormNoveltyIF` is min-max normalized negative Isolation Forest score, where higher means more anomalous.
-- `NormRuleLevel` is `min(rule_level / 15, 1)`.
-- `RecurrenceSignal` is `min(rule_firedtimes / 10, 1)`.
-- `AssetCriticality` is `1.0` for agent names containing `server`, `wazuh`, `dc`, `database`, `db`, or `web`; otherwise `0.5`.
+## Định tuyến cảnh báo (Dynamic Alert Routing)
 
-## Alert Routing
-
-Alerts are routed as:
+Alert được định tuyến theo logic:
 
 ```text
 priority_score >= 0.80
 => high_priority
 
-rf_probability < 0.60 and norm_novelty_if >= 0.70
+rf_probability < 0.60 và norm_novelty_if >= 0.70
 => anomaly_review
 
 0.50 <= priority_score < 0.80
 => anomaly_review
 
-otherwise
+còn lại
 => low_priority
 ```
 
-Severity is mapped as:
+Mức độ nghiêm trọng (severity) được ánh xạ tương ứng:
+- `high_priority` → `high`
+- `anomaly_review` → `medium`
+- `low_priority` → `low`
 
-- `high_priority` -> `high`
-- `anomaly_review` -> `medium`
-- `low_priority` -> `low`
+## Đánh giá (Evaluation)
 
-## Evaluation
+Báo cáo (metrics_report.txt) bao gồm:
+- Classification report của Random Forest
+- Confusion matrix
+- Tổng số alert và số lượng alert theo từng queue
+- Alert Volume Reduction
+- High Priority Precision
+- False Positive Count
+- Mô phỏng analyst feedback và đề xuất hiệu chỉnh ngưỡng (threshold tuning suggestions)
 
-The report includes:
+## Hạn chế (Limitations)
 
-- Random Forest classification report.
-- Confusion matrix.
-- Total alerts and queue counts.
-- Alert volume reduction.
-- High priority precision.
-- False positive count.
-- Simple analyst feedback and threshold tuning suggestions.
+- Nhãn được gán bằng rule-based keyword mapping, chưa phải ground truth đã được analyst xác thực.
+- Prototype chỉ phục vụ mục đích đánh giá nghiên cứu offline, chưa dùng cho môi trường SOC production.
+- Isolation Forest sử dụng các đặc trưng đã được engineering, không nên xem là bằng chứng xác định (definitive evidence) về việc bị xâm nhập.
+- Các ngưỡng (thresholds) hiện tại là giá trị mặc định cố định, cần được hiệu chỉnh thêm dựa trên feedback thật từ analyst.
 
-## Limitations
+## Hướng phát triển (Future Work)
 
-- Labels are generated from rule-based keyword mapping, not verified analyst ground truth.
-- The prototype is intended for offline research evaluation only.
-- Isolation Forest uses engineered features and should not be treated as definitive evidence of compromise.
-- Thresholds are fixed defaults and should be tuned with real analyst feedback.
-
-## Future Work
-
-- Add manually validated analyst labels.
-- Expand feature engineering with MITRE ATT&CK technique mappings.
-- Compare more supervised and unsupervised models.
-- Add temporal aggregation for multi-stage attack campaigns.
-- Evaluate threshold tuning across multiple exported Wazuh datasets.
+- Bổ sung nhãn được analyst xác thực thủ công (manually validated labels).
+- Mở rộng feature engineering với ánh xạ kỹ thuật theo MITRE ATT&CK.
+- So sánh thêm nhiều mô hình supervised và unsupervised khác.
+- Bổ sung temporal aggregation cho các chiến dịch tấn công nhiều giai đoạn (multi-stage attack campaigns).
+- Đánh giá khả năng hiệu chỉnh ngưỡng (threshold tuning) trên nhiều tập dữ liệu Wazuh export khác nhau.
